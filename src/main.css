@@ -24,3 +24,17 @@ img {
   margin: 20px 0;
   max-width: 200px;
 }
+
+.metadata {
+    color: #003366;
+    text-align: left;
+    font-size: 16px;
+    margin: 12px;
+}
+
+.metadata_window {
+    width: 35%;
+    border: 1px solid black;
+    margin: 12px;
+    background-color: #e8e8e8;
+}

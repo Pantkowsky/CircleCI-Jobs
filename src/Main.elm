@@ -1,8 +1,9 @@
 module Main exposing (..)
 
 import Browser
+import Html.Attributes exposing (class)
 import Secrets exposing (tokenCircleCI)
-import Html exposing (div, li, button, Html, text, h1)
+import Html exposing (..)
 import Html.Events exposing (onClick)
 import Http
 import Json.Decode exposing (Decoder, map2, field, string)
@@ -85,12 +86,12 @@ view model =
 me : Response -> Html Msg
 me res =
     case res of
-        Initial -> h1 [ ] [ text "Initial" ]
+        Initial -> h1 [] [ text "Initial" ]
         Loading -> h1 [] [ text "Loading" ]
         Failure -> h1 [] [ text "Error" ]
-        Success l e -> li [] [
-            h1 [] [ text (formatLogin l) ]
-            , h1 [] [text (formatEmail e)]
+        Success l e -> li [class "metadata_window"] [
+            h1 [class "metadata"] [ text (formatLogin l) ]
+            , h1 [class "metadata"] [text (formatEmail e)]
             ]
 
 formatLogin : String -> String
