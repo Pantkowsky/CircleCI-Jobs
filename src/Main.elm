@@ -21,11 +21,12 @@ main =
 ---- MODEL ----
 
 type alias Model = { response : Response }
+type alias SuccessData = { id: Int, name: String, login: String, email: String }
 
 type Response = Initial
     | Loading
     | Failure
-    | Success Int String String String
+    | Success SuccessData
 
 
 init : ( Model, Cmd Api.ApiClient.Msg )
@@ -49,8 +50,12 @@ update msg model =
         Api.ApiClient.Fetch -> ( { model | response = Loading }, Api.ApiClient.fetchData )
         Api.ApiClient.ApiData data ->
             case data of
-                Ok d -> ( { model | response = Success d.githubId d.name d.login d.email }, Cmd.none )
+                Ok d -> ( { model | response = Success (parseSuccessData d) }, Cmd.none )
                 Err _ -> ( { model | response = Failure }, Cmd.none )
+
+parseSuccessData : Api.ApiClient.Me -> SuccessData
+parseSuccessData data =
+    { id = data.githubId, name = data.name, login = data.login, email = data.email }
 
 ---- VIEW ----
 
@@ -58,19 +63,19 @@ update msg model =
 view : Model -> Html Api.ApiClient.Msg
 view model =
     div []
-        [ me model.response ]
+        [ render model.response ]
 
-me : Response -> Html Api.ApiClient.Msg
-me res =
+render : Response -> Html Api.ApiClient.Msg
+render res =
     case res of
         Initial -> h1 [] [ text "Initial" ]
         Loading -> h1 [] [ text "Loading" ]
         Failure -> h1 [] [ text "Error" ]
-        Success i n l e -> li [class "metadata_window"] [
-            h1 [class "metadata"] [ text (formatId i) ]
-            , h1 [class "metadata"] [text (formatName n)]
-            , h1 [class "metadata"] [text (formatLogin l)]
-            , h1 [class "metadata"] [text (formatEmail e)]
+        Success data-> li [class "metadata_window"] [
+            h1 [class "metadata"] [ text (formatId data.id) ]
+            , h1 [class "metadata"] [text (formatName data.name)]
+            , h1 [class "metadata"] [text (formatLogin data.login)]
+            , h1 [class "metadata"] [text (formatEmail data.email)]
             ]
 
 formatLogin : String -> String
