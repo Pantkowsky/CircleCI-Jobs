@@ -3,7 +3,6 @@ module Main exposing (..)
 import Browser
 import Html.Attributes exposing (class)
 import Html exposing (..)
-import Html.Events exposing (onClick)
 import Api.ApiClient
 import Task
 
