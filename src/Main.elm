@@ -71,11 +71,11 @@ render res =
         Initial -> h1 [] [ text "Initial" ]
         Loading -> h1 [] [ text "Loading" ]
         Failure -> h1 [] [ text "Error" ]
-        Success data-> li [class "metadata_window"] [
+        Success data -> div [class "metadata_window"] [
             h1 [class "metadata"] [ text (formatId data.id) ]
-            , h1 [class "metadata"] [text (formatName data.name)]
-            , h1 [class "metadata"] [text (formatLogin data.login)]
-            , h1 [class "metadata"] [text (formatEmail data.email)]
+            , h1 [class "metadata"] [ text (formatName data.name) ]
+            , h1 [class "metadata"] [ text (formatLogin data.login) ]
+            , h1 [class "metadata"] [ text (formatEmail data.email) ]
             ]
 
 formatLogin : String -> String
