@@ -2,15 +2,14 @@ module Main exposing (..)
 
 import Browser
 import Html.Attributes exposing (class)
-import Secrets exposing (tokenCircleCI)
 import Html exposing (..)
 import Html.Events exposing (onClick)
-import Http
-import Json.Decode exposing (Decoder, map2, field, string)
+import Api.ApiClient
+import Task
 
 ---- PROGRAM ----
 
-main : Program () Model Msg
+main : Program () Model Api.ApiClient.Msg
 main =
     Browser.element
         { view = view
@@ -23,74 +22,55 @@ main =
 ---- MODEL ----
 
 type alias Model = { response : Response }
-type alias Me = { login: String, email: String }
 
 type Response = Initial
     | Loading
     | Failure
-    | Success String String
+    | Success Int String String String
 
 
-init : ( Model, Cmd Msg )
+init : ( Model, Cmd Api.ApiClient.Msg )
 init =
-    ( initModel, Cmd.none )
+    ( initModel, fetchInitial )
 
 initModel : Model
 initModel = Model Initial
 
 ---- UPDATE ----
 
-type Msg = Fetch
-    | ApiData (Result Http.Error Me)
+
+fetchInitial : Cmd Api.ApiClient.Msg
+fetchInitial =
+    Task.perform (always Api.ApiClient.Fetch) (Task.succeed ())
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
+update : Api.ApiClient.Msg -> Model -> ( Model, Cmd Api.ApiClient.Msg )
 update msg model =
     case msg of
-        Fetch -> ( { model | response = Loading }, fetchData )
-        ApiData data ->
+        Api.ApiClient.Fetch -> ( { model | response = Loading }, Api.ApiClient.fetchData )
+        Api.ApiClient.ApiData data ->
             case data of
-                Ok d -> ( { model | response = Success d.login d.email }, Cmd.none )
+                Ok d -> ( { model | response = Success d.githubId d.name d.login d.email }, Cmd.none )
                 Err _ -> ( { model | response = Failure }, Cmd.none )
-
-fetchData : Cmd Msg
-fetchData =
-    Http.get
-        { url = requestUrl
-        , expect = Http.expectJson ApiData decoder}
-
-
-decoder : Decoder Me
-decoder =
-    map2 Me
-        (field "login" string)
-        (field "selected_email" string)
-
-requestUrl : String
-requestUrl = String.concat["https://circleci.com/api/v1.1/me", apiToken]
-
-apiToken : String
-apiToken = String.concat["?circle-token=", tokenCircleCI]
 
 ---- VIEW ----
 
 
-view : Model -> Html Msg
+view : Model -> Html Api.ApiClient.Msg
 view model =
     div []
-        [
-        button [ onClick Fetch ] [ text "Fetch data" ]
-        , me model.response
-        ]
+        [ me model.response ]
 
-me : Response -> Html Msg
+me : Response -> Html Api.ApiClient.Msg
 me res =
     case res of
         Initial -> h1 [] [ text "Initial" ]
         Loading -> h1 [] [ text "Loading" ]
         Failure -> h1 [] [ text "Error" ]
-        Success l e -> li [class "metadata_window"] [
-            h1 [class "metadata"] [ text (formatLogin l) ]
+        Success i n l e -> li [class "metadata_window"] [
+            h1 [class "metadata"] [ text (formatId i) ]
+            , h1 [class "metadata"] [text (formatName n)]
+            , h1 [class "metadata"] [text (formatLogin l)]
             , h1 [class "metadata"] [text (formatEmail e)]
             ]
 
@@ -101,6 +81,14 @@ formatLogin login =
 formatEmail : String -> String
 formatEmail email =
     String.concat["email: ", email]
+
+formatName : String -> String
+formatName name =
+    String.concat["name: ", name]
+
+formatId : Int -> String
+formatId id =
+    String.concat["github_id: ", String.fromInt id]
 
 
 
