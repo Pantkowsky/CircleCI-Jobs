@@ -21,7 +21,8 @@ main =
 ---- MODEL ----
 
 type alias Model = { response : Response }
-type alias SuccessData = { id: Int, name: String, login: String, email: String }
+type alias SuccessData =
+    { id: Int, name: String, login: String, email: String, list: List Api.ApiClient.Build }
 
 type Response = Initial
     | Loading
@@ -43,19 +44,26 @@ fetchInitial : Cmd Api.ApiClient.Msg
 fetchInitial =
     Task.perform (always Api.ApiClient.Fetch) (Task.succeed ())
 
-
 update : Api.ApiClient.Msg -> Model -> ( Model, Cmd Api.ApiClient.Msg )
 update msg model =
     case msg of
         Api.ApiClient.Fetch -> ( { model | response = Loading }, Api.ApiClient.fetchData )
-        Api.ApiClient.ApiData data ->
+        Api.ApiClient.MeData data ->
             case data of
-                Ok d -> ( { model | response = Success (parseSuccessData d) }, Cmd.none )
+                Ok d -> ( { model | response = Success (parseSuccessData d) }, Api.ApiClient.fetchBuilds )
+                Err _ -> ( { model | response = Failure }, Cmd.none )
+        Api.ApiClient.BuildData data ->
+            case data of
+                Ok d -> ( { model | response = Success (parseBuildData d) }, Cmd.none )
                 Err _ -> ( { model | response = Failure }, Cmd.none )
 
 parseSuccessData : Api.ApiClient.Me -> SuccessData
 parseSuccessData data =
-    { id = data.githubId, name = data.name, login = data.login, email = data.email }
+    { id = data.githubId, name = data.name, login = data.login, email = data.email, list = [] }
+
+parseBuildData : List Api.ApiClient.Build -> SuccessData
+parseBuildData data =
+    { id = 1, name = "name", login = "login", email = "email", list = data }
 
 ---- VIEW ----
 
@@ -76,6 +84,7 @@ render res =
             , h1 [class "metadata"] [ text (formatName data.name) ]
             , h1 [class "metadata"] [ text (formatLogin data.login) ]
             , h1 [class "metadata"] [ text (formatEmail data.email) ]
+            , h1 [class "metadata"] [ text (formatBuildNum data.list) ]
             ]
 
 formatLogin : String -> String
@@ -93,6 +102,10 @@ formatName name =
 formatId : Int -> String
 formatId id =
     String.concat["github_id: ", String.fromInt id]
+
+formatBuildNum : List Api.ApiClient.Build -> String
+formatBuildNum data =
+    String.concat["jobs: ", String.fromInt (List.length data)]
 
 
 
