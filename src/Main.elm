@@ -89,8 +89,16 @@ render res =
         Failure -> h1 [] [ text "Error" ]
         Success data -> div [class "metadata_window"] [
             h1 [class "metadata"] [ text (formatBuildNum data.list) ] ,
-            h1 [class "metadata"] [ text (formatTotalTime data.totalTime) ]
+            h1 [class "metadata"] [ text (formatTotalTime data.totalTime) ] ,
+            h1 [class "metadata"] [ text "Branches:"] ,
+            ul [class "metadata"] [ formatBranches data.branches ]
             ]
+
+formatBranches : List String -> Html msg
+formatBranches lst =
+    lst
+       |> List.map (\l -> li [] [ text l ])
+       |> ul []
 
 formatTotalTime : Int -> String
 formatTotalTime time =
