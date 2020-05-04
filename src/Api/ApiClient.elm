@@ -1,33 +1,19 @@
 module Api.ApiClient exposing (..)
 
-import Json.Decode as JD exposing (Decoder, field, map3, map4, string, int)
+import Json.Decode as JD exposing (Decoder, field, map4, string, int)
 import Http
 import Secrets exposing (tokenCircleCI)
 
-type alias Me =
-    {
-    githubId: Int,
-    name: String,
-    login: String,
-    email: String
-    }
-
 type alias Build =
     {
+    branch: String,
     num: Int,
     time: Int,
     status: String
     }
 
 type Msg = Fetch
-    | MeData (Result Http.Error Me)
     | BuildData (Result Http.Error (List Build))
-
-fetchData : Cmd Msg
-fetchData =
-    Http.get
-        { url = requestUrl
-        , expect = Http.expectJson MeData decoder}
 
 fetchBuilds : Cmd Msg
 fetchBuilds =
@@ -38,21 +24,14 @@ fetchBuilds =
     }
 
 
-decoder : Decoder Me
-decoder =
-    map4 Me
-        (field "github_id" int)
-        (field "name" string)
-        (field "login" string)
-        (field "selected_email" string)
-
 buildListDecoder : Decoder (List Build)
 buildListDecoder =
     JD.list buildDecoder
 
 buildDecoder : Decoder Build
 buildDecoder =
-    map3 Build
+    map4 Build
+        (field "branch" string)
         (field "build_num" int)
         (field "build_time_millis" int)
         (field "status" string)
