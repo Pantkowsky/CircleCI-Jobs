@@ -105,7 +105,17 @@ formatId id =
 
 formatBuildNum : List Api.ApiClient.Build -> String
 formatBuildNum data =
-    String.concat["jobs: ", String.fromInt (List.length data)]
+    String.concat["jobs: ", filterBuilds data]
+
+filterBuilds : List Api.ApiClient.Build -> String
+filterBuilds builds =
+    List.filter isStatusSuccess builds
+        |> List.length
+        |> String.fromInt
+
+isStatusSuccess : Api.ApiClient.Build -> Bool
+isStatusSuccess build =
+    build.status == "success"
 
 
 
