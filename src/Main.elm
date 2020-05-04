@@ -4,7 +4,9 @@ import Browser
 import Html.Attributes exposing (class)
 import Html exposing (..)
 import Api.ApiClient
+import Set
 import Task
+import Time exposing (toHour, toMinute, toSecond, utc)
 
 ---- PROGRAM ----
 
@@ -22,7 +24,7 @@ main =
 
 type alias Model = { response : Response }
 type alias SuccessData =
-    { id: Int, name: String, login: String, email: String, list: List Api.ApiClient.Build }
+    { branches: List String, totalTime: Int, list: List Api.ApiClient.Build }
 
 type Response = Initial
     | Loading
@@ -47,23 +49,29 @@ fetchInitial =
 update : Api.ApiClient.Msg -> Model -> ( Model, Cmd Api.ApiClient.Msg )
 update msg model =
     case msg of
-        Api.ApiClient.Fetch -> ( { model | response = Loading }, Api.ApiClient.fetchData )
-        Api.ApiClient.MeData data ->
-            case data of
-                Ok d -> ( { model | response = Success (parseSuccessData d) }, Api.ApiClient.fetchBuilds )
-                Err _ -> ( { model | response = Failure }, Cmd.none )
+        Api.ApiClient.Fetch -> ( { model | response = Loading }, Api.ApiClient.fetchBuilds )
         Api.ApiClient.BuildData data ->
             case data of
                 Ok d -> ( { model | response = Success (parseBuildData d) }, Cmd.none )
                 Err _ -> ( { model | response = Failure }, Cmd.none )
 
-parseSuccessData : Api.ApiClient.Me -> SuccessData
-parseSuccessData data =
-    { id = data.githubId, name = data.name, login = data.login, email = data.email, list = [] }
 
 parseBuildData : List Api.ApiClient.Build -> SuccessData
 parseBuildData data =
-    { id = 1, name = "name", login = "login", email = "email", list = data }
+    { branches = parseBranches data , totalTime = parseTotalTime data, list = data }
+
+parseBranches: List Api.ApiClient.Build -> List String
+parseBranches data =
+    data
+        |> List.map (\b -> b.branch)
+        |> Set.fromList
+        |> Set.toList
+
+parseTotalTime: List Api.ApiClient.Build -> Int
+parseTotalTime data =
+    data
+        |> List.map (\d -> d.time)
+        |> List.foldl (+) 0
 
 ---- VIEW ----
 
@@ -80,32 +88,32 @@ render res =
         Loading -> h1 [] [ text "Loading" ]
         Failure -> h1 [] [ text "Error" ]
         Success data -> div [class "metadata_window"] [
-            h1 [class "metadata"] [ text (formatId data.id) ]
-            , h1 [class "metadata"] [ text (formatName data.name) ]
-            , h1 [class "metadata"] [ text (formatLogin data.login) ]
-            , h1 [class "metadata"] [ text (formatEmail data.email) ]
-            , h1 [class "metadata"] [ text (formatBuildNum data.list) ]
+            h1 [class "metadata"] [ text (formatBuildNum data.list) ] ,
+            h1 [class "metadata"] [ text (formatTotalTime data.totalTime) ]
             ]
 
-formatLogin : String -> String
-formatLogin login =
-    String.concat["login: ", login]
+formatTotalTime : Int -> String
+formatTotalTime time =
+    String.concat["Total Runtime: ", formatTime time]
 
-formatEmail : String -> String
-formatEmail email =
-    String.concat["email: ", email]
+formatTime : Int -> String
+formatTime time =
+    time
+        |> Time.millisToPosix
+        |> toUtcString
 
-formatName : String -> String
-formatName name =
-    String.concat["name: ", name]
-
-formatId : Int -> String
-formatId id =
-    String.concat["github_id: ", String.fromInt id]
+toUtcString : Time.Posix -> String
+toUtcString time =
+    String.fromInt (toHour utc time)
+    ++ "h " ++
+    String.fromInt (toMinute utc time)
+    ++ "min " ++
+    String.fromInt (toSecond utc time)
+    ++ "sec"
 
 formatBuildNum : List Api.ApiClient.Build -> String
 formatBuildNum data =
-    String.concat["jobs: ", filterBuilds data]
+    String.concat["Scheduled jobs: ", filterBuilds data]
 
 filterBuilds : List Api.ApiClient.Build -> String
 filterBuilds builds =
