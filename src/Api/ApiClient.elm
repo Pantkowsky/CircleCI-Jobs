@@ -36,9 +36,6 @@ buildDecoder =
         (field "build_time_millis" int)
         (field "status" string)
 
-requestUrl : String
-requestUrl = String.concat["https://circleci.com/api/v1.1/me", appendApiToken]
-
 buildsUrl : String
 buildsUrl = String.concat["https://circleci.com/api/v1.1/project/gh/undo-insurance/android/tree/modularization", appendBuildSuffix]
 
