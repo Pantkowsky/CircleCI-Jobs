@@ -1,6 +1,6 @@
 module Api.ApiClient exposing (..)
 
-import Json.Decode as JD exposing (Decoder, field, map, map2, map4, string, int)
+import Json.Decode as JD exposing (Decoder, field, map3, map4, string, int)
 import Http
 import Secrets exposing (tokenCircleCI)
 
@@ -15,7 +15,8 @@ type alias Me =
 type alias Build =
     {
     num: Int,
-    time: Int
+    time: Int,
+    status: String
     }
 
 type Msg = Fetch
@@ -51,9 +52,10 @@ buildListDecoder =
 
 buildDecoder : Decoder Build
 buildDecoder =
-    map2 Build
+    map3 Build
         (field "build_num" int)
         (field "build_time_millis" int)
+        (field "status" string)
 
 requestUrl : String
 requestUrl = String.concat["https://circleci.com/api/v1.1/me", appendApiToken]
