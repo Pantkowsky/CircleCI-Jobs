@@ -69,7 +69,13 @@ parseBranches data =
 
 parseTotalTime: List Api.ApiClient.Build -> Int
 parseTotalTime data =
-    data
+    List.filter isStatusSuccess data
+        |> List.map (\d -> d.time)
+        |> List.foldl (+) 0
+
+parseTotalFilteredTime: List Api.ApiClient.Build -> Int
+parseTotalFilteredTime data =
+    List.filter isStatusSuccess data
         |> List.map (\d -> d.time)
         |> List.foldl (+) 0
 
