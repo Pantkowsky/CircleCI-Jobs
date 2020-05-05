@@ -1,6 +1,6 @@
 module Api.ApiClient exposing (..)
 
-import Json.Decode as JD exposing (Decoder, field, map4, string, int)
+import Json.Decode as JD exposing (Decoder, field, int, map4, string)
 import Http
 import Secrets exposing (tokenCircleCI)
 
@@ -12,21 +12,35 @@ type alias Build =
     status: String
     }
 
-type Msg = Fetch
-    | BuildData (Result Http.Error (List Build))
+type Msg = FetchAll
+    | FetchSuccessful
+    | AllJobs (Result Http.Error (List Build))
+    | SuccessfullJobs (Result Http.Error (List Build))
 
 fetchBuilds : Cmd Msg
 fetchBuilds =
     Http.get
     {
     url = buildsUrl
-    , expect = Http.expectJson BuildData buildListDecoder
+    , expect = Http.expectJson AllJobs buildListDecoder
     }
 
+fetchSuccessfullJobs : Cmd Msg
+fetchSuccessfullJobs =
+    Http.get
+    {
+    url = buildsUrl
+    , expect = Http.expectJson SuccessfullJobs successfulJobsDecoder
+    }
 
 buildListDecoder : Decoder (List Build)
 buildListDecoder =
     JD.list buildDecoder
+
+successfulJobsDecoder : Decoder (List Build)
+successfulJobsDecoder =
+    JD.list buildDecoder
+        |> JD.map (List.filter isStatusSuccess)
 
 buildDecoder : Decoder Build
 buildDecoder =
@@ -44,3 +58,7 @@ appendApiToken = String.concat["?circle-token=", tokenCircleCI]
 
 appendBuildSuffix : String
 appendBuildSuffix = String.concat[appendApiToken, "&limit=50"]
+
+isStatusSuccess : Build -> Bool
+isStatusSuccess build =
+    build.status == "success"
