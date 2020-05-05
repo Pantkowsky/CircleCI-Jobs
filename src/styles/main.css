@@ -10,7 +10,7 @@
 }
 
 body {
-  font-family: 'Source Sans Pro', 'Trebuchet MS', 'Lucida Grande', 'Bitstream Vera Sans', 'Helvetica Neue', sans-serif;
+  font-family: 'TSTARMonoRoundBold';
   margin: 0;
   text-align: center;
   color: #293c4b;
@@ -26,11 +26,12 @@ img {
 }
 
 .metadata {
-    color: #003366;
+    color: #ff003d;
     text-align: left;
     font-size: 16px;
     margin: 12px;
 }
+
 
 .metadata_window {
     width: 35%;
