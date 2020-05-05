@@ -32,6 +32,9 @@ img {
     margin: 12px;
 }
 
+.span {
+    color: #242424;
+}
 
 .metadata_window {
     width: 35%;
