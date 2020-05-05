@@ -38,3 +38,12 @@ img {
     margin: 12px;
     background-color: #e8e8e8;
 }
+
+.loading {
+    display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      min-height: 100vh;
+}
