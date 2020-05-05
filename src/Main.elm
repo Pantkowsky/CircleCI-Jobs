@@ -96,9 +96,9 @@ render res =
         Loading -> renderLoadingIcon
         Failure -> h1 [] [ text "Error" ]
         Success data -> div [class "metadata_window"] [
-            h1 [class "metadata"] [ text (formatBuildNum data.list) ] ,
-            h1 [class "metadata"] [ text (formatTotalTime data.totalTime) ] ,
-            h1 [class "metadata"] [ text "Branches:"] ,
+            h1 [class "metadata"] [ span [class "span"] [ text "Scheduled jobs: " ], text (filterBuilds data.list) ] ,
+            h1 [class "metadata"] [ span [class "span"] [ text "Total Runtime: " ], text (formatTime data.totalTime) ] ,
+            h1 [class "metadata"] [ span [class "span"] [ text "Branches:" ] ] ,
             ul [class "metadata"] [ formatBranches data.branches ]
             ]
 
@@ -114,10 +114,6 @@ formatBranches lst =
        |> List.map (\l -> li [] [ text l ])
        |> ul []
 
-formatTotalTime : Int -> String
-formatTotalTime time =
-    String.concat["Total Runtime: ", formatTime time]
-
 formatTime : Int -> String
 formatTime time =
     time
@@ -132,10 +128,6 @@ toUtcString time =
     ++ "min " ++
     String.fromInt (toSecond utc time)
     ++ "sec"
-
-formatBuildNum : List Api.ApiClient.Build -> String
-formatBuildNum data =
-    String.concat["Scheduled jobs: ", filterBuilds data]
 
 filterBuilds : List Api.ApiClient.Build -> String
 filterBuilds builds =
