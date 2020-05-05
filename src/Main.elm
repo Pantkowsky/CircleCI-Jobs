@@ -2,10 +2,10 @@ module Main exposing (..)
 
 import Browser
 import Html.Attributes exposing (class)
+import Html.Events exposing (onClick)
 import Html exposing (..)
 import Api.ApiClient
 import Set
-import Task
 import Time exposing (toHour, toMinute, toSecond, utc)
 import Loading exposing (LoaderType(..), defaultConfig, render)
 
@@ -35,23 +35,24 @@ type Response = Initial
 
 init : ( Model, Cmd Api.ApiClient.Msg )
 init =
-    ( initModel, fetchInitial )
+    ( initModel, Api.ApiClient.fetchBuilds )
 
 initModel : Model
-initModel = Model Initial
+initModel = { response = Loading }
 
 ---- UPDATE ----
 
 
-fetchInitial : Cmd Api.ApiClient.Msg
-fetchInitial =
-    Task.perform (always Api.ApiClient.Fetch) (Task.succeed ())
-
 update : Api.ApiClient.Msg -> Model -> ( Model, Cmd Api.ApiClient.Msg )
 update msg model =
     case msg of
-        Api.ApiClient.Fetch -> ( { model | response = Loading }, Api.ApiClient.fetchBuilds )
-        Api.ApiClient.BuildData data ->
+        Api.ApiClient.FetchAll -> ( { model | response = Loading }, Api.ApiClient.fetchBuilds)
+        Api.ApiClient.FetchSuccessful -> ( { model | response = Loading }, Api.ApiClient.fetchSuccessfullJobs)
+        Api.ApiClient.AllJobs data ->
+            case data of
+                Ok d -> ( { model | response = Success (parseBuildData d) }, Cmd.none )
+                Err _ -> ( { model | response = Failure }, Cmd.none )
+        Api.ApiClient.SuccessfullJobs data ->
             case data of
                 Ok d -> ( { model | response = Success (parseBuildData d) }, Cmd.none )
                 Err _ -> ( { model | response = Failure }, Cmd.none )
@@ -70,13 +71,7 @@ parseBranches data =
 
 parseTotalTime: List Api.ApiClient.Build -> Int
 parseTotalTime data =
-    List.filter isStatusSuccess data
-        |> List.map (\d -> d.time)
-        |> List.foldl (+) 0
-
-parseTotalFilteredTime: List Api.ApiClient.Build -> Int
-parseTotalFilteredTime data =
-    List.filter isStatusSuccess data
+    data
         |> List.map (\d -> d.time)
         |> List.foldl (+) 0
 
@@ -86,17 +81,20 @@ parseTotalFilteredTime data =
 view : Model -> Html Api.ApiClient.Msg
 view model =
     div []
-        [ render model.response ]
+        [
+        button [ onClick Api.ApiClient.FetchAll ] [ text "Show all" ] ,
+        button [ onClick Api.ApiClient.FetchSuccessful ] [ text "Show successful" ] ,
+        render model.response
+        ]
 
 render : Response -> Html Api.ApiClient.Msg
 render res =
     case res of
         Initial -> h1 [] [ text "Initial" ]
-        --Loading -> h1 [] [ text "Loading" ]
         Loading -> renderLoadingIcon
         Failure -> h1 [] [ text "Error" ]
         Success data -> div [class "metadata_window"] [
-            h1 [class "metadata"] [ span [class "span"] [ text "Scheduled jobs: " ], text (filterBuilds data.list) ] ,
+            h1 [class "metadata"] [ span [class "span"] [ text "Scheduled jobs: " ], text (formatJobsCount data.list) ] ,
             h1 [class "metadata"] [ span [class "span"] [ text "Total Runtime: " ], text (formatTime data.totalTime) ] ,
             h1 [class "metadata"] [ span [class "span"] [ text "Branches:" ] ] ,
             ul [class "metadata"] [ formatBranches data.branches ]
@@ -129,15 +127,8 @@ toUtcString time =
     String.fromInt (toSecond utc time)
     ++ "sec"
 
-filterBuilds : List Api.ApiClient.Build -> String
-filterBuilds builds =
-    List.filter isStatusSuccess builds
+formatJobsCount : List Api.ApiClient.Build -> String
+formatJobsCount jobs =
+    jobs
         |> List.length
         |> String.fromInt
-
-isStatusSuccess : Api.ApiClient.Build -> Bool
-isStatusSuccess build =
-    build.status == "success"
-
-
-
