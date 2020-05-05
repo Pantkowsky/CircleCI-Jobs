@@ -7,6 +7,7 @@ import Api.ApiClient
 import Set
 import Task
 import Time exposing (toHour, toMinute, toSecond, utc)
+import Loading exposing (LoaderType(..), defaultConfig, render)
 
 ---- PROGRAM ----
 
@@ -91,7 +92,8 @@ render : Response -> Html Api.ApiClient.Msg
 render res =
     case res of
         Initial -> h1 [] [ text "Initial" ]
-        Loading -> h1 [] [ text "Loading" ]
+        --Loading -> h1 [] [ text "Loading" ]
+        Loading -> renderLoadingIcon
         Failure -> h1 [] [ text "Error" ]
         Success data -> div [class "metadata_window"] [
             h1 [class "metadata"] [ text (formatBuildNum data.list) ] ,
@@ -99,6 +101,12 @@ render res =
             h1 [class "metadata"] [ text "Branches:"] ,
             ul [class "metadata"] [ formatBranches data.branches ]
             ]
+
+renderLoadingIcon : Html Api.ApiClient.Msg
+renderLoadingIcon =
+    div [class "loading"] [
+        Loading.render BouncingBalls { defaultConfig | color = "#ff003d", size = 40 } Loading.On
+    ]
 
 formatBranches : List String -> Html msg
 formatBranches lst =
