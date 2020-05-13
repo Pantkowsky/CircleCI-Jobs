@@ -5,6 +5,24 @@ import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
 import Html exposing (..)
 import Api.ApiClient
+import LineChart exposing (Config)
+import LineChart.Area as Area
+import LineChart.Axis as Axis
+import LineChart.Axis.Intersection as Intersection
+import LineChart.Axis.Line as AxisLine
+import LineChart.Axis.Range as Range
+import LineChart.Axis.Ticks as Ticks
+import LineChart.Axis.Title as Title
+import Color
+import LineChart.Colors as Colors
+import LineChart.Container as Container
+import LineChart.Dots as Dots
+import LineChart.Events as Events
+import LineChart.Grid as Grid
+import LineChart.Interpolation as Interpolation
+import LineChart.Junk as Junk
+import LineChart.Legends as Legends
+import LineChart.Line as Line
 import Set
 import Time exposing (toHour, toMinute, toSecond, utc)
 import Loading exposing (LoaderType(..), defaultConfig, render)
@@ -26,6 +44,8 @@ main =
 type alias Model = { response : Response }
 type alias SuccessData =
     { branches: List String, totalTime: Int, list: List Api.ApiClient.Build }
+type alias Job =
+    { id: Float, time: Float }
 
 type Response = Initial
     | Loading
@@ -97,7 +117,8 @@ render res =
             h1 [class "metadata"] [ span [class "span"] [ text "Scheduled jobs: " ], text (formatJobsCount data.list) ] ,
             h1 [class "metadata"] [ span [class "span"] [ text "Total Runtime: " ], text (formatTime data.totalTime) ] ,
             h1 [class "metadata"] [ span [class "span"] [ text "Branches:" ] ] ,
-            ul [class "metadata"] [ formatBranches data.branches ]
+            ul [class "metadata"] [ formatBranches data.branches ] ,
+            createChart data.list
             ]
 
 renderLoadingIcon : Html Api.ApiClient.Msg
@@ -105,6 +126,25 @@ renderLoadingIcon =
     div [class "loading"] [
         Loading.render BouncingBalls { defaultConfig | color = "#ff003d", size = 40 } Loading.On
     ]
+
+createChart : List Api.ApiClient.Build -> Html.Html msg
+createChart data =
+    data
+        |> List.sortBy (\d -> d.num)
+        |> List.map mapToJob
+        |> renderChart
+
+mapToJob : Api.ApiClient.Build -> Job
+mapToJob build =
+    Job (toFloat build.num) (asMinutes (Time.millisToPosix build.time) )
+
+renderChart : List Job -> Html.Html msg
+renderChart jobs =
+    LineChart.viewCustom chartConfig
+        [ LineChart.line colorUndoRed Dots.circle "Jobs" jobs ]
+
+colorUndoRed : Color.Color
+colorUndoRed = Color.rgb255 255 0 61
 
 formatBranches : List String -> Html msg
 formatBranches lst =
@@ -127,8 +167,29 @@ toUtcString time =
     String.fromInt (toSecond utc time)
     ++ "sec"
 
+asMinutes : Time.Posix -> Float
+asMinutes time =
+    toFloat (toMinute utc time)
+
 formatJobsCount : List Api.ApiClient.Build -> String
 formatJobsCount jobs =
     jobs
         |> List.length
         |> String.fromInt
+
+chartConfig : Config Job msg
+chartConfig =
+  { y = Axis.full 750 "time" .time
+  --{ y = Axis.time Time.utc 750 "time" (toFloat << Time.posixToMillis << .time)
+  , x = Axis.default 1500 "id" .id
+  , container = Container.default "line-chart-1"
+  , interpolation = Interpolation.linear
+  , intersection = Intersection.default
+  , legends = Legends.default
+  , events = Events.default
+  , junk = Junk.default
+  , grid = Grid.default
+  , area = Area.default
+  , line = Line.default
+  , dots = Dots.default
+  }
