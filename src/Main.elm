@@ -1,6 +1,7 @@
 module Main exposing (..)
 
 import Browser
+import Duration
 import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
 import Html exposing (..)
@@ -11,6 +12,7 @@ import LineChart.Axis as Axis
 import LineChart.Axis.Intersection as Intersection
 import LineChart.Axis.Line as AxisLine
 import LineChart.Axis.Range as Range
+import LineChart.Axis.Tick as Tick
 import LineChart.Axis.Ticks as Ticks
 import LineChart.Axis.Title as Title
 import Color
@@ -45,7 +47,7 @@ type alias Model = { response : Response }
 type alias SuccessData =
     { branches: List String, totalTime: Int, list: List Api.ApiClient.Build }
 type alias Job =
-    { id: Float, time: Float }
+    { id: Float, time: Time.Posix }
 
 type Response = Initial
     | Loading
@@ -131,17 +133,17 @@ createChart : List Api.ApiClient.Build -> Html.Html msg
 createChart data =
     data
         |> List.sortBy (\d -> d.num)
-        |> List.map mapToJob
+        |> List.map asJob
         |> renderChart
 
-mapToJob : Api.ApiClient.Build -> Job
-mapToJob build =
-    Job (toFloat build.num) (asMinutes (Time.millisToPosix build.time) )
+asJob : Api.ApiClient.Build -> Job
+asJob build =
+    Job (toFloat build.num) (Time.millisToPosix build.time)
 
 renderChart : List Job -> Html.Html msg
 renderChart jobs =
     LineChart.viewCustom chartConfig
-        [ LineChart.line colorUndoRed Dots.circle "Jobs" jobs ]
+        [ LineChart.line colorUndoRed Dots.circle "Successful" jobs ]
 
 colorUndoRed : Color.Color
 colorUndoRed = Color.rgb255 255 0 61
@@ -167,10 +169,6 @@ toUtcString time =
     String.fromInt (toSecond utc time)
     ++ "sec"
 
-asMinutes : Time.Posix -> Float
-asMinutes time =
-    toFloat (toMinute utc time)
-
 formatJobsCount : List Api.ApiClient.Build -> String
 formatJobsCount jobs =
     jobs
@@ -179,9 +177,8 @@ formatJobsCount jobs =
 
 chartConfig : Config Job msg
 chartConfig =
-  { y = Axis.full 750 "time" .time
-  --{ y = Axis.time Time.utc 750 "time" (toFloat << Time.posixToMillis << .time)
-  , x = Axis.default 1500 "id" .id
+  { y = Axis.full 1000 "time" (Duration.inMinutes << Duration.milliseconds << toFloat << Time.posixToMillis << .time)
+  , x = Axis.default 1750 "id" .id
   , container = Container.default "line-chart-1"
   , interpolation = Interpolation.linear
   , intersection = Intersection.default
