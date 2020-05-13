@@ -13,6 +13,7 @@
             "elm/http": "2.0.0",
             "elm/json": "1.1.2",
             "elm/time": "1.0.0",
+            "ianmackenzie/elm-units": "2.5.0",
             "perzanko/elm-loading": "2.0.4",
             "terezka/line-charts": "2.0.0"
         },
