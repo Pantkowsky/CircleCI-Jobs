@@ -42,7 +42,7 @@ main =
 
 ---- MODEL ----
 
-type alias Model = { response : Response, hovering: Maybe Api.ApiClient.Build }
+type alias Model = { response : Response, hovering: List Api.ApiClient.Build }
 type alias SuccessData =
     { branches: List String, totalTime: Int, list: List Api.ApiClient.Build }
 type alias Job =
@@ -59,7 +59,7 @@ init =
     ( initModel, Api.ApiClient.fetchBuilds )
 
 initModel : Model
-initModel = { response = Loading, hovering = Nothing }
+initModel = { response = Loading, hovering = [] }
 
 ---- UPDATE ----
 
@@ -134,7 +134,6 @@ orderByBuildNum list =
 
 renderChart : Model -> List Api.ApiClient.Build -> Html.Html Api.ApiClient.Msg
 renderChart model jobs =
-    --LineChart.viewCustom chartConfig
     LineChart.viewCustom
         { y = customAxis
           , x = Axis.default 1750 "id" (toFloat << .num)
@@ -144,16 +143,35 @@ renderChart model jobs =
           , legends = Legends.default
           , events =
                 Events.custom
-                    [ Events.onMouseMove Api.ApiClient.Hover Events.getNearest
-                    , Events.onMouseLeave (Api.ApiClient.Hover Nothing)
+                    [ Events.onMouseMove Api.ApiClient.Hover Events.getNearestX
+                    , Events.onMouseLeave (Api.ApiClient.Hover [])
                     ]
-          , junk = Junk.default
+          , junk = Junk.hoverMany model.hovering formatX formatY
           , grid = Grid.default
           , area = Area.default
           , line = Line.default
-          , dots = Dots.hoverOne model.hovering
+          , dots = Dots.hoverMany model.hovering
           }
         [ LineChart.line colorUndoRed Dots.circle "Successful" jobs ]
+
+formatX : Api.ApiClient.Build -> String
+formatX build =
+    "id: #" ++ String.fromInt build.num
+
+formatY : Api.ApiClient.Build -> String
+formatY build =
+    build.time
+        |> Time.millisToPosix
+        |> formatMinutes
+
+formatMinutes : Time.Posix -> String
+formatMinutes posix =
+    "finished in: "
+    ++
+    String.fromInt (toMinute utc posix)
+    ++ "min " ++
+    String.fromInt (toSecond utc posix)
+    ++ "sec"
 
 colorUndoRed : Color.Color
 colorUndoRed = Color.rgb255 255 0 61
