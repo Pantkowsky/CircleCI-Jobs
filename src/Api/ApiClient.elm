@@ -16,7 +16,7 @@ type Msg = FetchAll
     | FetchSuccessful
     | AllJobs (Result Http.Error (List Build))
     | SuccessfullJobs (Result Http.Error (List Build))
-    | Hover (Maybe Build)
+    | Hover (List Build)
 
 fetchBuilds : Cmd Msg
 fetchBuilds =
