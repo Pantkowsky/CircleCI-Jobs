@@ -137,7 +137,7 @@ renderChart model jobs =
     LineChart.viewCustom
         { y = customAxis
           , x = Axis.default 1850 "id" (toFloat << .num)
-          , container = Container.default "line-chart-1"
+          , container = Container.responsive "circle-ci-jobs"
           , interpolation = Interpolation.linear
           , intersection = Intersection.default
           , legends = Legends.grouped .max .min -20 -620
