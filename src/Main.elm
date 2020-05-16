@@ -114,7 +114,7 @@ render res model =
         Initial -> h1 [] [ text "Initial" ]
         Loading -> renderLoadingIcon
         Failure -> h1 [] [ text "Error" ]
-        Success -> div [class "metadata_window"] [
+        Success -> div [] [
             h1 [class "metadata"] [ span [class "span"] [ text "Scheduled jobs: " ], text (formatJobsCount model.data.list) ] ,
             h1 [class "metadata"] [ span [class "span"] [ text "Total Runtime: " ], text (formatTime model.data.totalTime) ] ,
             h1 [class "metadata"] [ span [class "span"] [ text "Branches:" ] ] ,
@@ -136,11 +136,11 @@ renderChart : Model -> List Api.ApiClient.Build -> Html.Html Api.ApiClient.Msg
 renderChart model jobs =
     LineChart.viewCustom
         { y = customAxis
-          , x = Axis.default 1750 "id" (toFloat << .num)
+          , x = Axis.default 1850 "id" (toFloat << .num)
           , container = Container.default "line-chart-1"
           , interpolation = Interpolation.linear
           , intersection = Intersection.default
-          , legends = Legends.default
+          , legends = Legends.grouped .max .min -20 -620
           , events =
                 Events.custom
                     [ Events.onMouseMove Api.ApiClient.Hover Events.getNearestX
@@ -207,7 +207,6 @@ customAxis : Axis.Config Api.ApiClient.Build msg
 customAxis =
   Axis.custom
     { title = Title.default "minutes"
-    --, variable = Just << (Duration.inMinutes << Duration.milliseconds << toFloat << Time.posixToMillis << .time)
     , variable = Just << (Duration.inMinutes << Duration.milliseconds << toFloat << .time)
     , pixels = 750
     , range = Range.padded 5 20
