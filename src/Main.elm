@@ -42,7 +42,7 @@ main =
 
 ---- MODEL ----
 
-type alias Model = { response : Response, hovering: List Api.ApiClient.Build }
+type alias Model = { response : Response, data: SuccessData, hovering: List Api.ApiClient.Build }
 type alias SuccessData =
     { branches: List String, totalTime: Int, list: List Api.ApiClient.Build }
 type alias Job =
@@ -51,15 +51,15 @@ type alias Job =
 type Response = Initial
     | Loading
     | Failure
-    | Success SuccessData
+    | Success
 
 
 init : ( Model, Cmd Api.ApiClient.Msg )
 init =
-    ( initModel, Api.ApiClient.fetchBuilds )
+    ( initModel, Api.ApiClient.fetchAll )
 
 initModel : Model
-initModel = { response = Loading, hovering = [] }
+initModel = { response = Loading, data = SuccessData [] 0 [], hovering = [] }
 
 ---- UPDATE ----
 
@@ -67,21 +67,21 @@ initModel = { response = Loading, hovering = [] }
 update : Api.ApiClient.Msg -> Model -> ( Model, Cmd Api.ApiClient.Msg )
 update msg model =
     case msg of
-        Api.ApiClient.FetchAll -> ( { model | response = Loading }, Api.ApiClient.fetchBuilds)
-        Api.ApiClient.FetchSuccessful -> ( { model | response = Loading }, Api.ApiClient.fetchSuccessfullJobs)
+        Api.ApiClient.FetchAll -> ( { model | response = Loading, data = SuccessData [] 0 [] }, Api.ApiClient.fetchAll)
+        Api.ApiClient.FetchSuccessful -> ( { model | response = Loading, data = SuccessData [] 0 [] }, Api.ApiClient.fetchSuccessful)
         Api.ApiClient.AllJobs data ->
             case data of
-                Ok d -> ( { model | response = Success (parseBuildData d) }, Cmd.none )
+                Ok d -> ( { model | response = Success, data = (parseBuildData model d) }, Cmd.none )
                 Err _ -> ( { model | response = Failure }, Cmd.none )
         Api.ApiClient.SuccessfullJobs data ->
             case data of
-                Ok d -> ( { model | response = Success (parseBuildData d) }, Cmd.none )
+                Ok d -> ( { model | response = Success, data = (parseBuildData model d) }, Cmd.none )
                 Err _ -> ( { model | response = Failure }, Cmd.none )
         Api.ApiClient.Hover hovering -> ( { model | hovering = hovering }, Cmd.none )
 
-parseBuildData : List Api.ApiClient.Build -> SuccessData
-parseBuildData data =
-    { branches = parseBranches data , totalTime = parseTotalTime data, list = data }
+parseBuildData : Model -> List Api.ApiClient.Build -> SuccessData
+parseBuildData model data =
+    { branches = model.data.branches ++ parseBranches data , totalTime = model.data.totalTime + parseTotalTime data, list = model.data.list ++ data }
 
 parseBranches: List Api.ApiClient.Build -> List String
 parseBranches data =
@@ -114,12 +114,12 @@ render res model =
         Initial -> h1 [] [ text "Initial" ]
         Loading -> renderLoadingIcon
         Failure -> h1 [] [ text "Error" ]
-        Success data -> div [class "metadata_window"] [
-            h1 [class "metadata"] [ span [class "span"] [ text "Scheduled jobs: " ], text (formatJobsCount data.list) ] ,
-            h1 [class "metadata"] [ span [class "span"] [ text "Total Runtime: " ], text (formatTime data.totalTime) ] ,
+        Success -> div [class "metadata_window"] [
+            h1 [class "metadata"] [ span [class "span"] [ text "Scheduled jobs: " ], text (formatJobsCount model.data.list) ] ,
+            h1 [class "metadata"] [ span [class "span"] [ text "Total Runtime: " ], text (formatTime model.data.totalTime) ] ,
             h1 [class "metadata"] [ span [class "span"] [ text "Branches:" ] ] ,
-            ul [class "metadata"] [ formatBranches data.branches ] ,
-            renderChart model (orderByBuildNum data.list)
+            ul [class "metadata"] [ formatBranches model.data.branches ] ,
+            renderChart model (orderByBuildNum model.data.list)
             ]
 
 renderLoadingIcon : Html Api.ApiClient.Msg
