@@ -209,10 +209,12 @@ customAxis =
     { title = Title.default "minutes"
     , variable = Just << (Duration.inMinutes << Duration.milliseconds << toFloat << .time)
     , pixels = 750
-    , range = Range.padded 5 20
+    , range = Range.padded 50 20
     , axisLine = AxisLine.rangeFrame Color.gray
     , ticks =
         Ticks.float 20
+        --Ticks.custom <| \range _ ->
+        --    List.map Tick.float [0, 1, 2, 3, 4, 5, 6]
         -- Ticks.timeCustom Time.utc 20 customTimeTick
     }
 
