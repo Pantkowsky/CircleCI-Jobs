@@ -16,7 +16,7 @@
             "elm/time": "1.0.0",
             "ianmackenzie/elm-units": "2.5.0",
             "perzanko/elm-loading": "2.0.4",
-            "terezka/line-charts": "2.0.0"
+            "terezka/line-charts": "2.0.1"
         },
         "indirect": {
             "Skinney/murmur3": "2.0.8",
