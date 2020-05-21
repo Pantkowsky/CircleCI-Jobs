@@ -25,6 +25,8 @@ import LineChart.Junk as Junk
 import LineChart.Legends as Legends
 import LineChart.Line as Line
 import Set
+import Svg
+import Svg.Attributes as Attributes
 import Time exposing (toHour, toMinute, toSecond, utc)
 import Loading exposing (LoaderType(..), defaultConfig, render)
 
@@ -209,29 +211,42 @@ customAxis =
     { title = Title.default "minutes"
     , variable = Just << (Duration.inMinutes << Duration.milliseconds << toFloat << .time)
     , pixels = 750
-    , range = Range.padded 50 20
+    , range = Range.padded 20 20
+    --, range = Range.custom (\{min, max} -> {min = 0, max = max})
     , axisLine = AxisLine.rangeFrame Color.gray
+    --, ticks = Ticks.float 20
     , ticks =
-        Ticks.float 20
-        --Ticks.custom <| \range _ ->
-        --    List.map Tick.float [0, 1, 2, 3, 4, 5, 6]
-        -- Ticks.timeCustom Time.utc 20 customTimeTick
+            Ticks.custom <| \range _ ->
+              let minuteNumbers = List.range (ceiling range.min) (floor range.max)
+                  secondNumbers =
+                    List.range (ceiling range.min) (floor range.max - 1)
+                        |> List.concatMap toQuarters
+
+                  toQuarters min = [ toQuarter min 0.25, toQuarter min 0.5, toQuarter min 0.75 ]
+                  toQuarter min offset = toFloat min + offset
+              in
+              List.map Tick.int minuteNumbers ++
+              List.map secondTick secondNumbers
     }
 
-customTimeTick : Tick.Time -> Tick.Config msg
-customTimeTick info =
-  let
-    label =
-      Tick.format info
-      -- customFormat info
-      -- customFormat2 info
-  in
+secondTick : Float -> Tick.Config msg
+secondTick position =
   Tick.custom
-    { position = toFloat (Time.posixToMillis info.timestamp)
-    , color = Color.black
-    , width = 2
-    , length = 8
-    , grid = False
+    { position = position
+    , color = colorUndoRed
+    , width = 1
+    , length = 7
+    , grid = True
     , direction = Tick.negative
-    , label = Just <| Junk.label Color.black label
+    , label =
+        let minute = toFloat (floor position)
+            offset = position - minute
+            seconds = 60 * offset
+        in
+        Just (Svg.text_
+                  [ Attributes.fill (Color.toCssString colorUndoRed)
+                  , Attributes.style "pointer-events: none;"
+                  , Attributes.fontSize "10"
+                  ]
+                  [ Svg.tspan [] [ Svg.text (String.fromFloat seconds) ] ])
     }
