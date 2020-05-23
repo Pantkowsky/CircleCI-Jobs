@@ -148,28 +148,26 @@ renderChart model jobs =
                     [ Events.onMouseMove Api.ApiClient.Hover Events.getNearestX
                     , Events.onMouseLeave (Api.ApiClient.Hover [])
                     ]
-          , junk = Junk.hoverMany model.hovering formatX formatY
+          , junk = Junk.hoverMany model.hovering tooltipTitle tooltipTime
           , grid = Grid.default
           , area = Area.default
           , line = Line.default
           , dots = Dots.hoverMany model.hovering
           }
-        [ LineChart.line colorUndoRed Dots.circle "Successful" jobs ]
+        [ LineChart.line colorUndoRed Dots.circle "Time" jobs ]
 
-formatX : Api.ApiClient.Build -> String
-formatX build =
-    "id: #" ++ String.fromInt build.num
+tooltipTitle : Api.ApiClient.Build -> String
+tooltipTitle build =
+    "Branch: " ++ build.branch
 
-formatY : Api.ApiClient.Build -> String
-formatY build =
+tooltipTime : Api.ApiClient.Build -> String
+tooltipTime build =
     build.time
         |> Time.millisToPosix
         |> formatMinutes
 
 formatMinutes : Time.Posix -> String
 formatMinutes posix =
-    "finished in: "
-    ++
     String.fromInt (toMinute utc posix)
     ++ "min " ++
     String.fromInt (toSecond utc posix)
@@ -212,9 +210,7 @@ customAxis =
     , variable = Just << (Duration.inMinutes << Duration.milliseconds << toFloat << .time)
     , pixels = 750
     , range = Range.padded 20 20
-    --, range = Range.custom (\{min, max} -> {min = 0, max = max})
     , axisLine = AxisLine.rangeFrame Color.gray
-    --, ticks = Ticks.float 20
     , ticks =
             Ticks.custom <| \range _ ->
               let minuteNumbers = List.range (ceiling range.min) (floor range.max)
@@ -233,9 +229,9 @@ secondTick : Float -> Tick.Config msg
 secondTick position =
   Tick.custom
     { position = position
-    , color = colorUndoRed
+    , color = Color.gray
     , width = 1
-    , length = 7
+    , length = 5
     , grid = True
     , direction = Tick.negative
     , label =
