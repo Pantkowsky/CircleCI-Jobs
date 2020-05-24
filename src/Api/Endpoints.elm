@@ -1,4 +1,4 @@
-module Api.Endpoints exposing (endpoints)
+module Endpoints exposing (endpoints)
 
 import Secrets exposing (tokenCircleCI)
 
