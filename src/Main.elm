@@ -58,7 +58,7 @@ type Response = Initial
 
 init : ( Model, Cmd Api.ApiClient.Msg )
 init =
-    ( initModel, Api.ApiClient.fetchAll )
+    ( initModel, Api.ApiClient.fetchSuccessful )
 
 initModel : Model
 initModel = { response = Loading, data = SuccessData [] 0 [], hovering = [] }
@@ -69,12 +69,6 @@ initModel = { response = Loading, data = SuccessData [] 0 [], hovering = [] }
 update : Api.ApiClient.Msg -> Model -> ( Model, Cmd Api.ApiClient.Msg )
 update msg model =
     case msg of
-        Api.ApiClient.FetchAll -> ( { model | response = Loading, data = SuccessData [] 0 [] }, Api.ApiClient.fetchAll)
-        Api.ApiClient.FetchSuccessful -> ( { model | response = Loading, data = SuccessData [] 0 [] }, Api.ApiClient.fetchSuccessful)
-        Api.ApiClient.AllJobs data ->
-            case data of
-                Ok d -> ( { model | response = Success, data = (parseBuildData model d) }, Cmd.none )
-                Err _ -> ( { model | response = Failure }, Cmd.none )
         Api.ApiClient.SuccessfullJobs data ->
             case data of
                 Ok d -> ( { model | response = Success, data = (parseBuildData model d) }, Cmd.none )
@@ -105,8 +99,6 @@ view : Model -> Html Api.ApiClient.Msg
 view model =
     div []
         [
-        button [ onClick Api.ApiClient.FetchAll ] [ text "Show all" ] ,
-        button [ onClick Api.ApiClient.FetchSuccessful ] [ text "Show successful" ] ,
         render model.response model
         ]
 
