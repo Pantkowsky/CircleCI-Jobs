@@ -1,11 +1,11 @@
 module Main exposing (..)
 
 import Browser
+import Models exposing (Build, Msg(..))
 import Duration
 import Html.Attributes exposing (class)
-import Html.Events exposing (onClick)
 import Html exposing (..)
-import Api.ApiClient
+import ApiClient exposing (requestData)
 import LineChart exposing (Config)
 import LineChart.Area as Area
 import LineChart.Axis as Axis
@@ -32,7 +32,7 @@ import Loading exposing (LoaderType(..), defaultConfig, render)
 
 ---- PROGRAM ----
 
-main : Program () Model Api.ApiClient.Msg
+main : Program () Model Msg
 main =
     Browser.element
         { view = view
@@ -44,9 +44,9 @@ main =
 
 ---- MODEL ----
 
-type alias Model = { response : Response, data: SuccessData, hovering: List Api.ApiClient.Build }
+type alias Model = { response : Response, data: SuccessData, hovering: List Build }
 type alias SuccessData =
-    { branches: List String, totalTime: Int, list: List Api.ApiClient.Build }
+    { branches: List String, totalTime: Int, list: List Build }
 type alias Job =
     { id: Float, time: Time.Posix }
 
@@ -56,9 +56,9 @@ type Response = Initial
     | Success
 
 
-init : ( Model, Cmd Api.ApiClient.Msg )
+init : ( Model, Cmd Msg )
 init =
-    ( initModel, Api.ApiClient.requestData )
+    ( initModel, requestData )
 
 initModel : Model
 initModel = { response = Loading, data = SuccessData [] 0 [], hovering = [] }
@@ -66,27 +66,27 @@ initModel = { response = Loading, data = SuccessData [] 0 [], hovering = [] }
 ---- UPDATE ----
 
 
-update : Api.ApiClient.Msg -> Model -> ( Model, Cmd Api.ApiClient.Msg )
+update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        Api.ApiClient.Data data ->
+        Data data ->
             case data of
                 Ok d -> ( { model | response = Success, data = (parseBuildData model d) }, Cmd.none )
                 Err _ -> ( { model | response = Failure }, Cmd.none )
-        Api.ApiClient.Hover hovering -> ( { model | hovering = hovering }, Cmd.none )
+        Hover hovering -> ( { model | hovering = hovering }, Cmd.none )
 
-parseBuildData : Model -> List Api.ApiClient.Build -> SuccessData
+parseBuildData : Model -> List Build -> SuccessData
 parseBuildData model data =
     { branches = model.data.branches ++ parseBranches data , totalTime = model.data.totalTime + parseTotalTime data, list = model.data.list ++ data }
 
-parseBranches: List Api.ApiClient.Build -> List String
+parseBranches: List Build -> List String
 parseBranches data =
     data
         |> List.map (\b -> b.branch)
         |> Set.fromList
         |> Set.toList
 
-parseTotalTime: List Api.ApiClient.Build -> Int
+parseTotalTime: List Build -> Int
 parseTotalTime data =
     data
         |> List.map (\d -> d.time)
@@ -95,14 +95,14 @@ parseTotalTime data =
 ---- VIEW ----
 
 
-view : Model -> Html Api.ApiClient.Msg
+view : Model -> Html Msg
 view model =
     div []
         [
         render model.response model
         ]
 
-render : Response -> Model -> Html Api.ApiClient.Msg
+render : Response -> Model -> Html Msg
 render res model =
     case res of
         Initial -> h1 [] [ text "Initial" ]
@@ -116,17 +116,17 @@ render res model =
             renderChart model (orderByBuildNum model.data.list)
             ]
 
-renderLoadingIcon : Html Api.ApiClient.Msg
+renderLoadingIcon : Html Msg
 renderLoadingIcon =
     div [class "loading"] [
         Loading.render BouncingBalls { defaultConfig | color = "#ff003d", size = 40 } Loading.On
     ]
 
-orderByBuildNum : List Api.ApiClient.Build -> List Api.ApiClient.Build
+orderByBuildNum : List Build -> List Build
 orderByBuildNum list =
     list |> List.sortBy (\b -> b.num)
 
-renderChart : Model -> List Api.ApiClient.Build -> Html.Html Api.ApiClient.Msg
+renderChart : Model -> List Build -> Html.Html Msg
 renderChart model jobs =
     LineChart.viewCustom
         { y = customAxis
@@ -137,8 +137,8 @@ renderChart model jobs =
           , legends = Legends.grouped .max .min -20 -620
           , events =
                 Events.custom
-                    [ Events.onMouseMove Api.ApiClient.Hover Events.getNearestX
-                    , Events.onMouseLeave (Api.ApiClient.Hover [])
+                    [ Events.onMouseMove Hover Events.getNearestX
+                    , Events.onMouseLeave (Hover [])
                     ]
           , junk = Junk.hoverMany model.hovering tooltipTitle tooltipTime
           , grid = Grid.default
@@ -148,11 +148,11 @@ renderChart model jobs =
           }
         [ LineChart.line colorUndoRed Dots.circle "Time" jobs ]
 
-tooltipTitle : Api.ApiClient.Build -> String
+tooltipTitle : Build -> String
 tooltipTitle build =
     "Branch: " ++ build.branch
 
-tooltipTime : Api.ApiClient.Build -> String
+tooltipTime : Build -> String
 tooltipTime build =
     build.time
         |> Time.millisToPosix
@@ -189,13 +189,13 @@ toUtcString time =
     String.fromInt (toSecond utc time)
     ++ "sec"
 
-formatJobsCount : List Api.ApiClient.Build -> String
+formatJobsCount : List Build -> String
 formatJobsCount jobs =
     jobs
         |> List.length
         |> String.fromInt
 
-customAxis : Axis.Config Api.ApiClient.Build msg
+customAxis : Axis.Config Build msg
 customAxis =
   Axis.custom
     { title = Title.default "minutes"
