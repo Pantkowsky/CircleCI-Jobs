@@ -58,7 +58,7 @@ type Response = Initial
 
 init : ( Model, Cmd Api.ApiClient.Msg )
 init =
-    ( initModel, Api.ApiClient.fetchSuccessful )
+    ( initModel, Api.ApiClient.requestData )
 
 initModel : Model
 initModel = { response = Loading, data = SuccessData [] 0 [], hovering = [] }
@@ -69,7 +69,7 @@ initModel = { response = Loading, data = SuccessData [] 0 [], hovering = [] }
 update : Api.ApiClient.Msg -> Model -> ( Model, Cmd Api.ApiClient.Msg )
 update msg model =
     case msg of
-        Api.ApiClient.SuccessfullJobs data ->
+        Api.ApiClient.Data data ->
             case data of
                 Ok d -> ( { model | response = Success, data = (parseBuildData model d) }, Cmd.none )
                 Err _ -> ( { model | response = Failure }, Cmd.none )

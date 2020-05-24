@@ -1,7 +1,7 @@
 module Api.ApiClient exposing (..)
 
 import Api.Endpoints exposing (..)
-import Json.Decode as JD exposing (Decoder, field, int, map4, string)
+import Json.Decode as Decoder exposing (Decoder, field, int, map4, string)
 import Http
 
 type alias Build =
@@ -12,11 +12,11 @@ type alias Build =
     status: String
     }
 
-type Msg = SuccessfullJobs (Result Http.Error (List Build))
+type Msg = Data (Result Http.Error (List Build))
     | Hover (List Build)
 
-fetchSuccessful : Cmd Msg
-fetchSuccessful =
+requestData : Cmd Msg
+requestData =
     endpoints
             |> List.map fetchSuccessfulJobs
             |> Cmd.batch
@@ -26,13 +26,13 @@ fetchSuccessfulJobs endpoint =
     Http.get
         {
         url = endpoint
-        , expect = Http.expectJson SuccessfullJobs successfulJobsDecoder
+        , expect = Http.expectJson Data successfulJobsDecoder
         }
 
 successfulJobsDecoder : Decoder (List Build)
 successfulJobsDecoder =
-    JD.list buildDecoder
-        |> JD.map (List.filter isStatusSuccess)
+    Decoder.list buildDecoder
+        |> Decoder.map (List.filter isStatusSuccess)
 
 buildDecoder : Decoder Build
 buildDecoder =
