@@ -1,7 +1,7 @@
 module Main exposing (..)
 
 import Browser
-import Models exposing (Build, Msg(..))
+import Models exposing (Build, Msg(..), JobData, parseData)
 import Duration
 import Html.Attributes exposing (class)
 import Html exposing (..)
@@ -24,7 +24,6 @@ import LineChart.Interpolation as Interpolation
 import LineChart.Junk as Junk
 import LineChart.Legends as Legends
 import LineChart.Line as Line
-import Set
 import Svg
 import Svg.Attributes as Attributes
 import Time exposing (toHour, toMinute, toSecond, utc)
@@ -44,11 +43,7 @@ main =
 
 ---- MODEL ----
 
-type alias Model = { response : Response, data: SuccessData, hovering: List Build }
-type alias SuccessData =
-    { branches: List String, totalTime: Int, list: List Build }
-type alias Job =
-    { id: Float, time: Time.Posix }
+type alias Model = { response : Response, data: JobData, hovering: List Build }
 
 type Response = Initial
     | Loading
@@ -61,46 +56,34 @@ init =
     ( initModel, requestData )
 
 initModel : Model
-initModel = { response = Loading, data = SuccessData [] 0 [], hovering = [] }
+initModel = { response = Loading, data = JobData [] 0 [], hovering = [] }
 
 ---- UPDATE ----
-
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         Data data ->
             case data of
-                Ok d -> ( { model | response = Success, data = (parseBuildData model d) }, Cmd.none )
+                Ok d ->
+                    ( { model | response = Success, data = (asJobData model d) }, Cmd.none )
                 Err _ -> ( { model | response = Failure }, Cmd.none )
         Hover hovering -> ( { model | hovering = hovering }, Cmd.none )
 
-parseBuildData : Model -> List Build -> SuccessData
-parseBuildData model data =
-    { branches = model.data.branches ++ parseBranches data , totalTime = model.data.totalTime + parseTotalTime data, list = model.data.list ++ data }
-
-parseBranches: List Build -> List String
-parseBranches data =
-    data
-        |> List.map (\b -> b.branch)
-        |> Set.fromList
-        |> Set.toList
-
-parseTotalTime: List Build -> Int
-parseTotalTime data =
-    data
-        |> List.map (\d -> d.time)
-        |> List.foldl (+) 0
+asJobData : Model -> List Build -> JobData
+asJobData model data =
+    let branches = model.data.branches
+        time = model.data.totalTime
+        jobs = model.data.jobs
+    in
+    parseData (branches, time, jobs) data
 
 ---- VIEW ----
-
 
 view : Model -> Html Msg
 view model =
     div []
-        [
-        render model.response model
-        ]
+        [ render model.response model ]
 
 render : Response -> Model -> Html Msg
 render res model =
@@ -109,11 +92,11 @@ render res model =
         Loading -> renderLoadingIcon
         Failure -> h1 [] [ text "Error" ]
         Success -> div [] [
-            h1 [class "metadata"] [ span [class "span"] [ text "Scheduled jobs: " ], text (formatJobsCount model.data.list) ] ,
+            h1 [class "metadata"] [ span [class "span"] [ text "Scheduled jobs: " ], text (formatJobsCount model.data.jobs) ] ,
             h1 [class "metadata"] [ span [class "span"] [ text "Total Runtime: " ], text (formatTime model.data.totalTime) ] ,
             h1 [class "metadata"] [ span [class "span"] [ text "Branches:" ] ] ,
             ul [class "metadata"] [ formatBranches model.data.branches ] ,
-            renderChart model (orderByBuildNum model.data.list)
+            renderChart model (orderByBuildNum model.data.jobs)
             ]
 
 renderLoadingIcon : Html Msg
