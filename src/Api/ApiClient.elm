@@ -12,31 +12,14 @@ type alias Build =
     status: String
     }
 
-type Msg = FetchAll
-    | FetchSuccessful
-    | AllJobs (Result Http.Error (List Build))
-    | SuccessfullJobs (Result Http.Error (List Build))
+type Msg = SuccessfullJobs (Result Http.Error (List Build))
     | Hover (List Build)
-
-fetchAll : Cmd Msg
-fetchAll =
-    endpoints
-        |> List.map fetchAllJobs
-        |> Cmd.batch
 
 fetchSuccessful : Cmd Msg
 fetchSuccessful =
     endpoints
             |> List.map fetchSuccessfulJobs
             |> Cmd.batch
-
-fetchAllJobs : String -> Cmd Msg
-fetchAllJobs endpoint =
-    Http.get
-        {
-        url = endpoint
-        , expect = Http.expectJson AllJobs buildListDecoder
-        }
 
 fetchSuccessfulJobs : String -> Cmd Msg
 fetchSuccessfulJobs endpoint =
@@ -45,10 +28,6 @@ fetchSuccessfulJobs endpoint =
         url = endpoint
         , expect = Http.expectJson SuccessfullJobs successfulJobsDecoder
         }
-
-buildListDecoder : Decoder (List Build)
-buildListDecoder =
-    JD.list buildDecoder
 
 successfulJobsDecoder : Decoder (List Build)
 successfulJobsDecoder =
