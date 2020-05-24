@@ -1,4 +1,4 @@
-module Models exposing (Build, JobData, Job, Msg(..), parseData)
+module Models exposing (Build, JobData, Msg(..), parseData)
 
 import Http
 import Set
@@ -17,12 +17,6 @@ type alias JobData =
     branches: List String,
     totalTime: Int,
     jobs: List Build
-    }
-
-type alias Job =
-    {
-    id: Float,
-    time: Time.Posix
     }
 
 type Msg = Data (Result Http.Error (List Build))
