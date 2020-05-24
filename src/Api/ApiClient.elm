@@ -1,19 +1,9 @@
-module Api.ApiClient exposing (..)
+module ApiClient exposing (..)
 
-import Api.Endpoints exposing (..)
+import Endpoints exposing (..)
+import Models exposing (Build, Msg(..))
 import Json.Decode as Decoder exposing (Decoder, field, int, map4, string)
 import Http
-
-type alias Build =
-    {
-    branch: String,
-    num: Int,
-    time: Int,
-    status: String
-    }
-
-type Msg = Data (Result Http.Error (List Build))
-    | Hover (List Build)
 
 requestData : Cmd Msg
 requestData =
