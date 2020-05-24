@@ -1,7 +1,7 @@
 module Main exposing (..)
 
 import Browser
-import Models exposing (Build, Msg(..), JobData, parseData)
+import Models exposing (Job, Msg(..), JobData, parseData)
 import Duration
 import Html.Attributes exposing (class)
 import Html exposing (..)
@@ -43,7 +43,7 @@ main =
 
 ---- MODEL ----
 
-type alias Model = { response : Response, data: JobData, hovering: List Build }
+type alias Model = { response : Response, data: JobData, hovering: List Job }
 
 type Response = Initial
     | Loading
@@ -70,7 +70,7 @@ update msg model =
                 Err _ -> ( { model | response = Failure }, Cmd.none )
         Hover hovering -> ( { model | hovering = hovering }, Cmd.none )
 
-asJobData : Model -> List Build -> JobData
+asJobData : Model -> List Job -> JobData
 asJobData model data =
     let branches = model.data.branches
         time = model.data.totalTime
@@ -105,11 +105,11 @@ renderLoadingIcon =
         Loading.render BouncingBalls { defaultConfig | color = "#ff003d", size = 40 } Loading.On
     ]
 
-orderByBuildNum : List Build -> List Build
+orderByBuildNum : List Job -> List Job
 orderByBuildNum list =
     list |> List.sortBy (\b -> b.num)
 
-renderChart : Model -> List Build -> Html.Html Msg
+renderChart : Model -> List Job -> Html.Html Msg
 renderChart model jobs =
     LineChart.viewCustom
         { y = customAxis
@@ -131,11 +131,11 @@ renderChart model jobs =
           }
         [ LineChart.line colorUndoRed Dots.circle "Time" jobs ]
 
-tooltipTitle : Build -> String
+tooltipTitle : Job -> String
 tooltipTitle build =
     "Branch: " ++ build.branch
 
-tooltipTime : Build -> String
+tooltipTime : Job -> String
 tooltipTime build =
     build.time
         |> Time.millisToPosix
@@ -172,13 +172,13 @@ toUtcString time =
     String.fromInt (toSecond utc time)
     ++ "sec"
 
-formatJobsCount : List Build -> String
+formatJobsCount : List Job -> String
 formatJobsCount jobs =
     jobs
         |> List.length
         |> String.fromInt
 
-customAxis : Axis.Config Build msg
+customAxis : Axis.Config Job msg
 customAxis =
   Axis.custom
     { title = Title.default "minutes"

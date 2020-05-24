@@ -1,10 +1,9 @@
-module Models exposing (Build, JobData, Msg(..), parseData)
+module Models exposing (Job, JobData, Msg(..), parseData)
 
 import Http
 import Set
-import Time
 
-type alias Build =
+type alias Job =
     {
     branch: String,
     num: Int,
@@ -16,24 +15,24 @@ type alias JobData =
     {
     branches: List String,
     totalTime: Int,
-    jobs: List Build
+    jobs: List Job
     }
 
-type Msg = Data (Result Http.Error (List Build))
-    | Hover (List Build)
+type Msg = Data (Result Http.Error (List Job))
+    | Hover (List Job)
 
-parseData : (List String, Int, List Build) -> List Build -> JobData
+parseData : (List String, Int, List Job) -> List Job -> JobData
 parseData (branches, totalTime, jobs) data =
     { branches = branches ++ parseBranches data , totalTime = totalTime + parseTotalTime data, jobs = jobs ++ data }
 
-parseBranches: List Build -> List String
+parseBranches: List Job -> List String
 parseBranches data =
     data
         |> List.map (\b -> b.branch)
         |> Set.fromList
         |> Set.toList
 
-parseTotalTime: List Build -> Int
+parseTotalTime: List Job -> Int
 parseTotalTime data =
     data
         |> List.map (\d -> d.time)
